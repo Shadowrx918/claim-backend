@@ -1,26 +1,29 @@
 const express = require('express');
 const fs = require('fs');
-const cors = require('cors');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-app.use(cors());
 app.use(express.json());
+const file = 'claimed.json';
 
-let claimed = fs.existsSync('claimed.json') ? JSON.parse(fs.readFileSync('claimed.json')) : [];
+if (!fs.existsSync(file)) fs.writeFileSync(file, '{}');
+let claimed = JSON.parse(fs.readFileSync(file));
 
 app.post('/claim', (req, res) => {
   const { id } = req.body;
-  if (!id) return res.send("Invalid Discord ID.");
-  if (claimed.includes(id)) return res.send("❌ Already claimed!");
+  if (!id) return res.status(400).json({ success: false, msg: "No ID" });
 
-  claimed.push(id);
-  fs.writeFileSync('claimed.json', JSON.stringify(claimed));
-  
-  // TODO: Add 1 coin to bot system here (or save to file)
+  if (claimed[id]) {
+    return res.json({ success: false, msg: "Already claimed" });
+  }
 
-  res.send("✅ Reward claimed successfully!");
+  claimed[id] = true;
+  fs.writeFileSync(file, JSON.stringify(claimed));
+  res.json({ success: true, msg: "You got 1 coin!" });
 });
 
-app.listen(PORT, () => console.log(`Server live on port ${PORT}`));
+app.get('/', (req, res) => {
+  res.send('Backend is live.');
+});
+
+app.listen(process.env.PORT || 3000);
 ￼Enter
